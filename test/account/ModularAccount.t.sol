@@ -38,22 +38,33 @@ contract ModularAccountTest is AccountTestBase {
     address public owner2;
     uint256 public owner2Key;
     ModularAccount public account2;
+    // WalletXModularFactory public factory;
 
     address public ethRecipient;
     Counter public counter;
     ExecutionManifest internal _manifest;
 
-    event ExecutionInstalled(address indexed module, ExecutionManifest manifest);
-    event ExecutionUninstalled(address indexed module, bool onUninstallSucceeded, ExecutionManifest manifest);
+    event ExecutionInstalled(
+        address indexed module,
+        ExecutionManifest manifest
+    );
+    event ExecutionUninstalled(
+        address indexed module,
+        bool onUninstallSucceeded,
+        ExecutionManifest manifest
+    );
     event ReceivedCall(bytes msgData, uint256 msgValue);
 
     function setUp() public {
         tokenReceiverModule = _deployTokenReceiverModule();
 
         (owner2, owner2Key) = makeAddrAndKey("owner2");
-
         // Compute counterfactual address
-        account2 = ModularAccount(payable(factory.getAddress(owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID)));
+        account2 = ModularAccount(
+            payable(
+                factory.getAddress(owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID)
+            )
+        );
         vm.deal(address(account2), 100 ether);
 
         ethRecipient = makeAddr("ethRecipient");
@@ -71,8 +82,14 @@ contract ModularAccountTest is AccountTestBase {
             sender: address(account1),
             nonce: 0,
             initCode: "",
-            callData: abi.encodeCall(ModularAccount.execute, (ethRecipient, 1 wei, "")),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            callData: abi.encodeCall(
+                ModularAccount.execute,
+                (ethRecipient, 1 wei, "")
+            ),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -81,8 +98,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -94,14 +118,18 @@ contract ModularAccountTest is AccountTestBase {
 
     function test_basicUserOp_withInitCode() public {
         bytes memory callData = vm.envOr("SMA_TEST", false)
-            ? abi.encodeCall(SemiModularAccount(payable(account1)).updateFallbackSigner, (owner2))
+            ? abi.encodeCall(
+                SemiModularAccount(payable(account1)).updateFallbackSigner,
+                (owner2)
+            )
             : abi.encodeCall(
                 ModularAccount.execute,
                 (
                     address(singleSignerValidationModule),
                     0,
                     abi.encodeCall(
-                        SingleSignerValidationModule.transferSigner, (TEST_DEFAULT_VALIDATION_ENTITY_ID, owner2)
+                        SingleSignerValidationModule.transferSigner,
+                        (TEST_DEFAULT_VALIDATION_ENTITY_ID, owner2)
                     )
                 )
             );
@@ -110,10 +138,17 @@ contract ModularAccountTest is AccountTestBase {
             sender: address(account2),
             nonce: 0,
             initCode: abi.encodePacked(
-                address(factory), abi.encodeCall(factory.createAccount, (owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID))
+                address(factory),
+                abi.encodeCall(
+                    factory.createAccount,
+                    (owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID)
+                )
             ),
             callData: callData,
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 2),
             paymasterAndData: "",
@@ -122,8 +157,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner2Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner2Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -138,10 +180,20 @@ contract ModularAccountTest is AccountTestBase {
             sender: address(account2),
             nonce: 0,
             initCode: abi.encodePacked(
-                address(factory), abi.encodeCall(factory.createAccount, (owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID))
+                address(factory),
+                abi.encodeCall(
+                    factory.createAccount,
+                    (owner2, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID)
+                )
             ),
-            callData: abi.encodeCall(ModularAccount.execute, (recipient, 1 wei, "")),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            callData: abi.encodeCall(
+                ModularAccount.execute,
+                (recipient, 1 wei, "")
+            ),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -150,8 +202,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner2Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner2Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -166,8 +225,14 @@ contract ModularAccountTest is AccountTestBase {
             sender: address(account1),
             nonce: 0,
             initCode: "",
-            callData: abi.encodeCall(ModularAccount.execute, (ethRecipient, 1 wei, "")),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            callData: abi.encodeCall(
+                ModularAccount.execute,
+                (ethRecipient, 1 wei, "")
+            ),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -176,8 +241,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -203,9 +275,13 @@ contract ModularAccountTest is AccountTestBase {
             nonce: 0,
             initCode: "",
             callData: abi.encodeCall(
-                ModularAccount.execute, (address(counter), 0, abi.encodeCall(counter.increment, ()))
+                ModularAccount.execute,
+                (address(counter), 0, abi.encodeCall(counter.increment, ()))
             ),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -214,8 +290,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -229,14 +312,21 @@ contract ModularAccountTest is AccountTestBase {
         // Performs both an eth send and a contract interaction with counter
         Call[] memory calls = new Call[](2);
         calls[0] = Call({target: ethRecipient, value: 1 wei, data: ""});
-        calls[1] = Call({target: address(counter), value: 0, data: abi.encodeCall(counter.increment, ())});
+        calls[1] = Call({
+            target: address(counter),
+            value: 0,
+            data: abi.encodeCall(counter.increment, ())
+        });
 
         PackedUserOperation memory userOp = PackedUserOperation({
             sender: address(account1),
             nonce: 0,
             initCode: "",
             callData: abi.encodeCall(ModularAccount.executeBatch, (calls)),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -245,8 +335,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -261,14 +358,19 @@ contract ModularAccountTest is AccountTestBase {
         vm.startPrank(address(entryPoint));
 
         vm.expectEmit(true, true, true, true);
-        emit ExecutionInstalled(address(tokenReceiverModule), tokenReceiverModule.executionManifest());
+        emit ExecutionInstalled(
+            address(tokenReceiverModule),
+            tokenReceiverModule.executionManifest()
+        );
         account1.installExecution({
             module: address(tokenReceiverModule),
             manifest: tokenReceiverModule.executionManifest(),
             moduleInstallData: abi.encode(uint48(1 days))
         });
 
-        ExecutionDataView memory data = account1.getExecutionData(TokenReceiverModule.onERC721Received.selector);
+        ExecutionDataView memory data = account1.getExecutionData(
+            TokenReceiverModule.onERC721Received.selector
+        );
         assertEq(data.module, address(tokenReceiverModule));
     }
 
@@ -291,12 +393,19 @@ contract ModularAccountTest is AccountTestBase {
 
         address badModule = address(1);
         vm.expectRevert(
-            abi.encodeWithSelector(ModuleManagerInternals.InterfaceNotSupported.selector, address(badModule))
+            abi.encodeWithSelector(
+                ModuleManagerInternals.InterfaceNotSupported.selector,
+                address(badModule)
+            )
         );
 
         ExecutionManifest memory m;
 
-        account1.installExecution({module: address(badModule), manifest: m, moduleInstallData: "a"});
+        account1.installExecution({
+            module: address(badModule),
+            manifest: m,
+            moduleInstallData: "a"
+        });
     }
 
     function test_installExecution_alreadyInstalled() public {
@@ -334,18 +443,27 @@ contract ModularAccountTest is AccountTestBase {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit ExecutionUninstalled(address(module), true, module.executionManifest());
+        emit ExecutionUninstalled(
+            address(module),
+            true,
+            module.executionManifest()
+        );
         account1.uninstallExecution({
             module: address(module),
             manifest: module.executionManifest(),
             moduleUninstallData: ""
         });
 
-        ExecutionDataView memory data = account1.getExecutionData(module.foo.selector);
+        ExecutionDataView memory data = account1.getExecutionData(
+            module.foo.selector
+        );
         assertEq(data.module, address(0));
     }
 
-    function _installExecutionWithExecHooks() internal returns (MockModule module) {
+    function _installExecutionWithExecHooks()
+        internal
+        returns (MockModule module)
+    {
         vm.startPrank(address(entryPoint));
 
         module = new MockModule(_manifest);
@@ -365,10 +483,16 @@ contract ModularAccountTest is AccountTestBase {
         bytes32 slot = account3.proxiableUUID();
 
         // account has impl from factory
-        assertEq(address(accountImplementation), address(uint160(uint256(vm.load(address(account1), slot)))));
+        assertEq(
+            address(accountImplementation),
+            address(uint160(uint256(vm.load(address(account1), slot))))
+        );
         account1.upgradeToAndCall(address(account3), bytes(""));
         // account has new impl
-        assertEq(address(account3), address(uint160(uint256(vm.load(address(account1), slot)))));
+        assertEq(
+            address(account3),
+            address(uint160(uint256(vm.load(address(account1), slot))))
+        );
     }
 
     // TODO: Consider if this test belongs here or in the tests specific to the SingleSignerValidationModule
@@ -377,12 +501,19 @@ contract ModularAccountTest is AccountTestBase {
             // Note: replaced "owner1" with address(0), this doesn't actually affect the account, but allows the
             // test to pass by ensuring the signer can be set in the validation.
             assertEq(
-                singleSignerValidationModule.signers(TEST_DEFAULT_VALIDATION_ENTITY_ID, address(account1)),
+                singleSignerValidationModule.signers(
+                    TEST_DEFAULT_VALIDATION_ENTITY_ID,
+                    address(account1)
+                ),
                 address(0)
             );
         } else {
             assertEq(
-                singleSignerValidationModule.signers(TEST_DEFAULT_VALIDATION_ENTITY_ID, address(account1)), owner1
+                singleSignerValidationModule.signers(
+                    TEST_DEFAULT_VALIDATION_ENTITY_ID,
+                    address(account1)
+                ),
+                owner1
             );
         }
 
@@ -391,12 +522,17 @@ contract ModularAccountTest is AccountTestBase {
             address(singleSignerValidationModule),
             0,
             abi.encodeCall(
-                SingleSignerValidationModule.transferSigner, (TEST_DEFAULT_VALIDATION_ENTITY_ID, owner2)
+                SingleSignerValidationModule.transferSigner,
+                (TEST_DEFAULT_VALIDATION_ENTITY_ID, owner2)
             )
         );
 
         assertEq(
-            singleSignerValidationModule.signers(TEST_DEFAULT_VALIDATION_ENTITY_ID, address(account1)), owner2
+            singleSignerValidationModule.signers(
+                TEST_DEFAULT_VALIDATION_ENTITY_ID,
+                address(account1)
+            ),
+            owner2
         );
     }
 
@@ -405,13 +541,22 @@ contract ModularAccountTest is AccountTestBase {
 
         bytes32 replaySafeHash = vm.envOr("SMA_TEST", false)
             ? SemiModularAccount(payable(account1)).replaySafeHash(message)
-            : singleSignerValidationModule.replaySafeHash(address(account1), message);
+            : singleSignerValidationModule.replaySafeHash(
+                address(account1),
+                message
+            );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, replaySafeHash);
 
-        bytes memory signature = _encode1271Signature(_signerValidation, abi.encodePacked(r, s, v));
+        bytes memory signature = _encode1271Signature(
+            _signerValidation,
+            abi.encodePacked(r, s, v)
+        );
 
-        bytes4 validationResult = IERC1271(address(account1)).isValidSignature(message, signature);
+        bytes4 validationResult = IERC1271(address(account1)).isValidSignature(
+            message,
+            signature
+        );
 
         assertEq(validationResult, bytes4(0x1626ba7e));
     }
@@ -422,7 +567,13 @@ contract ModularAccountTest is AccountTestBase {
         uint32 newEntityId = 2;
         vm.prank(address(entryPoint));
         account1.installValidation(
-            ValidationConfigLib.pack(address(singleSignerValidationModule), newEntityId, false, false, true),
+            ValidationConfigLib.pack(
+                address(singleSignerValidationModule),
+                newEntityId,
+                false,
+                false,
+                true
+            ),
             new bytes4[](0),
             abi.encode(newEntityId, owner1),
             new bytes[](0)
@@ -432,17 +583,26 @@ contract ModularAccountTest is AccountTestBase {
 
         bytes32 replaySafeHash = vm.envOr("SMA_TEST", false)
             ? SemiModularAccount(payable(account1)).replaySafeHash(message)
-            : singleSignerValidationModule.replaySafeHash(address(account1), message);
+            : singleSignerValidationModule.replaySafeHash(
+                address(account1),
+                message
+            );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, replaySafeHash);
 
         bytes memory signature = _encode1271Signature(
-            ModuleEntityLib.pack(address(singleSignerValidationModule), newEntityId), abi.encodePacked(r, s, v)
+            ModuleEntityLib.pack(
+                address(singleSignerValidationModule),
+                newEntityId
+            ),
+            abi.encodePacked(r, s, v)
         );
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ModularAccount.SignatureValidationInvalid.selector, singleSignerValidationModule, newEntityId
+                ModularAccount.SignatureValidationInvalid.selector,
+                singleSignerValidationModule,
+                newEntityId
             )
         );
         IERC1271(address(account1)).isValidSignature(message, signature);
@@ -453,7 +613,13 @@ contract ModularAccountTest is AccountTestBase {
         uint32 newEntityId = 2;
         vm.prank(address(entryPoint));
         account1.installValidation(
-            ValidationConfigLib.pack(address(singleSignerValidationModule), newEntityId, true, false, false),
+            ValidationConfigLib.pack(
+                address(singleSignerValidationModule),
+                newEntityId,
+                true,
+                false,
+                false
+            ),
             new bytes4[](0),
             abi.encode(newEntityId, owner1),
             new bytes[](0)
@@ -463,8 +629,14 @@ contract ModularAccountTest is AccountTestBase {
             sender: address(account1),
             nonce: 0,
             initCode: "",
-            callData: abi.encodeCall(ModularAccount.execute, (ethRecipient, 1 wei, "")),
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            callData: abi.encodeCall(
+                ModularAccount.execute,
+                (ethRecipient, 1 wei, "")
+            ),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: "",
@@ -473,9 +645,15 @@ contract ModularAccountTest is AccountTestBase {
 
         // Generate signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
         userOp.signature = _encodeSignature(
-            ModuleEntityLib.pack(address(singleSignerValidationModule), newEntityId),
+            ModuleEntityLib.pack(
+                address(singleSignerValidationModule),
+                newEntityId
+            ),
             GLOBAL_VALIDATION,
             abi.encodePacked(r, s, v)
         );
@@ -489,7 +667,9 @@ contract ModularAccountTest is AccountTestBase {
                 0,
                 "AA23 reverted",
                 abi.encodeWithSelector(
-                    ModularAccount.UserOpValidationInvalid.selector, singleSignerValidationModule, newEntityId
+                    ModularAccount.UserOpValidationInvalid.selector,
+                    singleSignerValidationModule,
+                    newEntityId
                 )
             )
         );
@@ -500,7 +680,12 @@ contract ModularAccountTest is AccountTestBase {
         account1.executeWithAuthorization(
             abi.encodeCall(ModularAccount.execute, (ethRecipient, 1 wei, "")),
             _encodeSignature(
-                ModuleEntityLib.pack(address(singleSignerValidationModule), newEntityId), GLOBAL_VALIDATION, ""
+                ModuleEntityLib.pack(
+                    address(singleSignerValidationModule),
+                    newEntityId
+                ),
+                GLOBAL_VALIDATION,
+                ""
             )
         );
 
@@ -510,19 +695,32 @@ contract ModularAccountTest is AccountTestBase {
     // Internal Functions
 
     function _printStorageReadsAndWrites(address addr) internal {
-        (bytes32[] memory accountReads, bytes32[] memory accountWrites) = vm.accesses(addr);
+        (bytes32[] memory accountReads, bytes32[] memory accountWrites) = vm
+            .accesses(addr);
         for (uint256 i = 0; i < accountWrites.length; i++) {
             bytes32 valWritten = vm.load(addr, accountWrites[i]);
             // solhint-disable-next-line no-console
             console.log(
-                string.concat("write loc: ", vm.toString(accountWrites[i]), " val: ", vm.toString(valWritten))
+                string.concat(
+                    "write loc: ",
+                    vm.toString(accountWrites[i]),
+                    " val: ",
+                    vm.toString(valWritten)
+                )
             );
         }
 
         for (uint256 i = 0; i < accountReads.length; i++) {
             bytes32 valRead = vm.load(addr, accountReads[i]);
             // solhint-disable-next-line no-console
-            console.log(string.concat("read: ", vm.toString(accountReads[i]), " val: ", vm.toString(valRead)));
+            console.log(
+                string.concat(
+                    "read: ",
+                    vm.toString(accountReads[i]),
+                    " val: ",
+                    vm.toString(valRead)
+                )
+            );
         }
     }
 }

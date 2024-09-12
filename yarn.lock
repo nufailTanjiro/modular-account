@@ -2380,6 +2380,10 @@ slice-ansi@^4.0.0:
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
 
+"solady@github:Vectorized/solady#v0.0.237":
+  version "0.0.237"
+  resolved "https://codeload.github.com/Vectorized/solady/tar.gz/24b6272d83fba9a4233bafafbcd7f879e3b0948b"
+
 solhint@^3.6.2:
   version "3.6.2"
   resolved "https://registry.yarnpkg.com/solhint/-/solhint-3.6.2.tgz#2b2acbec8fdc37b2c68206a71ba89c7f519943fe"

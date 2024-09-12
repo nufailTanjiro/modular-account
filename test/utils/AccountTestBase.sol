@@ -7,14 +7,15 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 
 import {Call, IModularAccount} from "@erc-6900/reference-implementation/interfaces/IModularAccount.sol";
 
-import {AccountFactory} from "../../src/account/AccountFactory.sol";
+// import {AccountFactory} from "../../src/account/AccountFactory.sol";
+import {WalletXModularAccountFactory} from "../../src/factory/WalletXModularAccountFactory.sol";
+
 import {ModularAccount} from "../../src/account/ModularAccount.sol";
 import {SemiModularAccount} from "../../src/account/SemiModularAccount.sol";
 import {ModuleEntity, ModuleEntityLib} from "../../src/helpers/ModuleEntityLib.sol";
 import {SingleSignerValidationModule} from "../../src/modules/validation/SingleSignerValidationModule.sol";
 import {OptimizedTest} from "./OptimizedTest.sol";
-import {TEST_DEFAULT_VALIDATION_ENTITY_ID as EXT_CONST_TEST_DEFAULT_VALIDATION_ENTITY_ID} from
-    "./TestConstants.sol";
+import {TEST_DEFAULT_VALIDATION_ENTITY_ID as EXT_CONST_TEST_DEFAULT_VALIDATION_ENTITY_ID} from "./TestConstants.sol";
 
 /// @dev This contract handles common boilerplate setup for tests using ModularAccount with
 /// SingleSignerValidationModule.
@@ -28,7 +29,7 @@ abstract contract AccountTestBase is OptimizedTest {
     SingleSignerValidationModule public singleSignerValidationModule;
     ModularAccount public accountImplementation;
     SemiModularAccount public semiModularAccountImplementation;
-    AccountFactory public factory;
+    WalletXModularAccountFactory public factory;
 
     address public factoryOwner;
 
@@ -42,7 +43,8 @@ abstract contract AccountTestBase is OptimizedTest {
     uint8 public constant GLOBAL_VALIDATION = 1;
 
     // Re-declare the constant to prevent derived test contracts from having to import it
-    uint32 public constant TEST_DEFAULT_VALIDATION_ENTITY_ID = EXT_CONST_TEST_DEFAULT_VALIDATION_ENTITY_ID;
+    uint32 public constant TEST_DEFAULT_VALIDATION_ENTITY_ID =
+        EXT_CONST_TEST_DEFAULT_VALIDATION_ENTITY_ID;
 
     uint256 public constant CALL_GAS_LIMIT = 100_000;
     uint256 public constant VERIFICATION_GAS_LIMIT = 1_200_000;
@@ -58,46 +60,76 @@ abstract contract AccountTestBase is OptimizedTest {
         factoryOwner = makeAddr("factoryOwner");
         beneficiary = payable(makeAddr("beneficiary"));
 
-        address deployedSingleSignerValidation = address(_deploySingleSignerValidationModule());
+        address deployedSingleSignerValidation = address(
+            _deploySingleSignerValidationModule()
+        );
 
         // We etch the single signer validation to the max address, such that it coincides with the fallback
         // validation module entity for semi modular account tests.
-        singleSignerValidationModule = SingleSignerValidationModule(address(type(uint160).max));
-        vm.etch(address(singleSignerValidationModule), deployedSingleSignerValidation.code);
+        singleSignerValidationModule = SingleSignerValidationModule(
+            address(type(uint160).max)
+        );
+        vm.etch(
+            address(singleSignerValidationModule),
+            deployedSingleSignerValidation.code
+        );
 
         accountImplementation = _deployModularAccount(entryPoint);
 
-        semiModularAccountImplementation = SemiModularAccount(payable(_deploySemiModularAccount(entryPoint)));
+        semiModularAccountImplementation = SemiModularAccount(
+            payable(_deploySemiModularAccount(entryPoint))
+        );
 
-        factory = new AccountFactory(
+        factory = new WalletXModularAccountFactory(
             entryPoint,
             accountImplementation,
-            semiModularAccountImplementation,
+            // semiModularAccountImplementation,
             address(singleSignerValidationModule),
             factoryOwner
         );
 
-        account1 = factory.createAccount(owner1, 0, TEST_DEFAULT_VALIDATION_ENTITY_ID);
+        account1 = factory.createAccount(
+            owner1,
+            0,
+            TEST_DEFAULT_VALIDATION_ENTITY_ID
+        );
         vm.deal(address(account1), 100 ether);
 
-        _signerValidation =
-            ModuleEntityLib.pack(address(singleSignerValidationModule), TEST_DEFAULT_VALIDATION_ENTITY_ID);
+        _signerValidation = ModuleEntityLib.pack(
+            address(singleSignerValidationModule),
+            TEST_DEFAULT_VALIDATION_ENTITY_ID
+        );
     }
 
     function _runExecUserOp(address target, bytes memory callData) internal {
-        _runUserOp(abi.encodeCall(IModularAccount.execute, (target, 0, callData)));
+        _runUserOp(
+            abi.encodeCall(IModularAccount.execute, (target, 0, callData))
+        );
     }
 
-    function _runExecUserOp(address target, bytes memory callData, bytes memory revertReason) internal {
-        _runUserOp(abi.encodeCall(IModularAccount.execute, (target, 0, callData)), revertReason);
+    function _runExecUserOp(
+        address target,
+        bytes memory callData,
+        bytes memory revertReason
+    ) internal {
+        _runUserOp(
+            abi.encodeCall(IModularAccount.execute, (target, 0, callData)),
+            revertReason
+        );
     }
 
     function _runExecBatchUserOp(Call[] memory calls) internal {
         _runUserOp(abi.encodeCall(IModularAccount.executeBatch, (calls)));
     }
 
-    function _runExecBatchUserOp(Call[] memory calls, bytes memory revertReason) internal {
-        _runUserOp(abi.encodeCall(IModularAccount.executeBatch, (calls)), revertReason);
+    function _runExecBatchUserOp(
+        Call[] memory calls,
+        bytes memory revertReason
+    ) internal {
+        _runUserOp(
+            abi.encodeCall(IModularAccount.executeBatch, (calls)),
+            revertReason
+        );
     }
 
     function _runUserOp(bytes memory callData) internal {
@@ -105,7 +137,10 @@ abstract contract AccountTestBase is OptimizedTest {
         _runUserOp(callData, hex"");
     }
 
-    function _runUserOp(bytes memory callData, bytes memory expectedRevertData) internal {
+    function _runUserOp(
+        bytes memory callData,
+        bytes memory expectedRevertData
+    ) internal {
         uint256 nonce = entryPoint.getNonce(address(account1), 0);
 
         PackedUserOperation memory userOp = PackedUserOperation({
@@ -113,7 +148,10 @@ abstract contract AccountTestBase is OptimizedTest {
             nonce: nonce,
             initCode: hex"",
             callData: callData,
-            accountGasLimits: _encodeGas(VERIFICATION_GAS_LIMIT, CALL_GAS_LIMIT),
+            accountGasLimits: _encodeGas(
+                VERIFICATION_GAS_LIMIT,
+                CALL_GAS_LIMIT
+            ),
             preVerificationGas: 0,
             gasFees: _encodeGas(1, 1),
             paymasterAndData: hex"",
@@ -121,9 +159,16 @@ abstract contract AccountTestBase is OptimizedTest {
         });
 
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(owner1Key, userOpHash.toEthSignedMessageHash());
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            owner1Key,
+            userOpHash.toEthSignedMessageHash()
+        );
 
-        userOp.signature = _encodeSignature(_signerValidation, GLOBAL_VALIDATION, abi.encodePacked(r, s, v));
+        userOp.signature = _encodeSignature(
+            _signerValidation,
+            GLOBAL_VALIDATION,
+            abi.encodePacked(r, s, v)
+        );
 
         PackedUserOperation[] memory userOps = new PackedUserOperation[](1);
         userOps[0] = userOp;
@@ -135,50 +180,88 @@ abstract contract AccountTestBase is OptimizedTest {
     }
 
     function _runtimeExec(address target, bytes memory callData) internal {
-        _runtimeCall(abi.encodeCall(IModularAccount.execute, (target, 0, callData)));
+        _runtimeCall(
+            abi.encodeCall(IModularAccount.execute, (target, 0, callData))
+        );
     }
 
-    function _runtimeExec(address target, bytes memory callData, bytes memory expectedRevertData) internal {
-        _runtimeCall(abi.encodeCall(IModularAccount.execute, (target, 0, callData)), expectedRevertData);
+    function _runtimeExec(
+        address target,
+        bytes memory callData,
+        bytes memory expectedRevertData
+    ) internal {
+        _runtimeCall(
+            abi.encodeCall(IModularAccount.execute, (target, 0, callData)),
+            expectedRevertData
+        );
     }
 
-    function _runtimeExecExpFail(address target, bytes memory callData, bytes memory expectedRevertData)
-        internal
-    {
-        _runtimeCallExpFail(abi.encodeCall(IModularAccount.execute, (target, 0, callData)), expectedRevertData);
+    function _runtimeExecExpFail(
+        address target,
+        bytes memory callData,
+        bytes memory expectedRevertData
+    ) internal {
+        _runtimeCallExpFail(
+            abi.encodeCall(IModularAccount.execute, (target, 0, callData)),
+            expectedRevertData
+        );
     }
 
     function _runtimeExecBatch(Call[] memory calls) internal {
         _runtimeCall(abi.encodeCall(IModularAccount.executeBatch, (calls)));
     }
 
-    function _runtimeExecBatch(Call[] memory calls, bytes memory expectedRevertData) internal {
-        _runtimeCall(abi.encodeCall(IModularAccount.executeBatch, (calls)), expectedRevertData);
+    function _runtimeExecBatch(
+        Call[] memory calls,
+        bytes memory expectedRevertData
+    ) internal {
+        _runtimeCall(
+            abi.encodeCall(IModularAccount.executeBatch, (calls)),
+            expectedRevertData
+        );
     }
 
-    function _runtimeExecBatchExpFail(Call[] memory calls, bytes memory expectedRevertData) internal {
-        _runtimeCallExpFail(abi.encodeCall(IModularAccount.executeBatch, (calls)), expectedRevertData);
+    function _runtimeExecBatchExpFail(
+        Call[] memory calls,
+        bytes memory expectedRevertData
+    ) internal {
+        _runtimeCallExpFail(
+            abi.encodeCall(IModularAccount.executeBatch, (calls)),
+            expectedRevertData
+        );
     }
 
     function _runtimeCall(bytes memory callData) internal {
         _runtimeCall(callData, "");
     }
 
-    function _runtimeCall(bytes memory callData, bytes memory expectedRevertData) internal {
+    function _runtimeCall(
+        bytes memory callData,
+        bytes memory expectedRevertData
+    ) internal {
         if (expectedRevertData.length > 0) {
             vm.expectRevert(expectedRevertData);
         }
 
         vm.prank(owner1);
-        account1.executeWithAuthorization(callData, _encodeSignature(_signerValidation, GLOBAL_VALIDATION, ""));
+        account1.executeWithAuthorization(
+            callData,
+            _encodeSignature(_signerValidation, GLOBAL_VALIDATION, "")
+        );
     }
 
     // Always expects a revert, even if the revert data is zero-length.
-    function _runtimeCallExpFail(bytes memory callData, bytes memory expectedRevertData) internal {
+    function _runtimeCallExpFail(
+        bytes memory callData,
+        bytes memory expectedRevertData
+    ) internal {
         vm.expectRevert(expectedRevertData);
 
         vm.prank(owner1);
-        account1.executeWithAuthorization(callData, _encodeSignature(_signerValidation, GLOBAL_VALIDATION, ""));
+        account1.executeWithAuthorization(
+            callData,
+            _encodeSignature(_signerValidation, GLOBAL_VALIDATION, "")
+        );
     }
 
     function _transferOwnershipToTest() internal {
@@ -186,7 +269,10 @@ abstract contract AccountTestBase is OptimizedTest {
         vm.prank(owner1);
         if (vm.envOr("SMA_TEST", false)) {
             account1.executeWithAuthorization(
-                abi.encodeCall(SemiModularAccount(payable(account1)).updateFallbackSigner, (address(this))),
+                abi.encodeCall(
+                    SemiModularAccount(payable(account1)).updateFallbackSigner,
+                    (address(this))
+                ),
                 _encodeSignature(_signerValidation, GLOBAL_VALIDATION, "")
             );
             return;
@@ -208,7 +294,10 @@ abstract contract AccountTestBase is OptimizedTest {
     }
 
     // helper function to compress 2 gas values into a single bytes32
-    function _encodeGas(uint256 g1, uint256 g2) internal pure returns (bytes32) {
+    function _encodeGas(
+        uint256 g1,
+        uint256 g2
+    ) internal pure returns (bytes32) {
         return bytes32(uint256((g1 << 128) + uint128(g2)));
     }
 
@@ -222,7 +311,10 @@ abstract contract AccountTestBase is OptimizedTest {
 
         sig = abi.encodePacked(sig, _packPreHookDatas(preValidationHookData));
 
-        sig = abi.encodePacked(sig, _packValidationResWithIndex(255, validationData));
+        sig = abi.encodePacked(
+            sig,
+            _packValidationResWithIndex(255, validationData)
+        );
 
         return sig;
     }
@@ -238,44 +330,58 @@ abstract contract AccountTestBase is OptimizedTest {
 
         sig = abi.encodePacked(sig, _packPreHookDatas(preValidationHookData));
 
-        sig = abi.encodePacked(sig, _packValidationResWithIndex(255, validationData));
+        sig = abi.encodePacked(
+            sig,
+            _packValidationResWithIndex(255, validationData)
+        );
 
         return sig;
     }
 
     // overload for the case where there are no pre validation hooks
-    function _encodeSignature(ModuleEntity validationFunction, uint8 globalOrNot, bytes memory validationData)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        PreValidationHookData[] memory emptyPreValidationHookData = new PreValidationHookData[](0);
-        return _encodeSignature(validationFunction, globalOrNot, emptyPreValidationHookData, validationData);
+    function _encodeSignature(
+        ModuleEntity validationFunction,
+        uint8 globalOrNot,
+        bytes memory validationData
+    ) internal pure returns (bytes memory) {
+        PreValidationHookData[]
+            memory emptyPreValidationHookData = new PreValidationHookData[](0);
+        return
+            _encodeSignature(
+                validationFunction,
+                globalOrNot,
+                emptyPreValidationHookData,
+                validationData
+            );
     }
 
     // overload for the case where there are no pre validation hooks
-    function _encode1271Signature(ModuleEntity validationFunction, bytes memory validationData)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        PreValidationHookData[] memory emptyPreValidationHookData = new PreValidationHookData[](0);
-        return _encode1271Signature(validationFunction, emptyPreValidationHookData, validationData);
+    function _encode1271Signature(
+        ModuleEntity validationFunction,
+        bytes memory validationData
+    ) internal pure returns (bytes memory) {
+        PreValidationHookData[]
+            memory emptyPreValidationHookData = new PreValidationHookData[](0);
+        return
+            _encode1271Signature(
+                validationFunction,
+                emptyPreValidationHookData,
+                validationData
+            );
     }
 
     // helper function to pack pre validation hook datas, according to the sparse calldata segment spec.
-    function _packPreHookDatas(PreValidationHookData[] memory preValidationHookData)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function _packPreHookDatas(
+        PreValidationHookData[] memory preValidationHookData
+    ) internal pure returns (bytes memory) {
         bytes memory res = "";
 
         for (uint256 i = 0; i < preValidationHookData.length; ++i) {
             res = abi.encodePacked(
                 res,
                 _packValidationResWithIndex(
-                    preValidationHookData[i].index, preValidationHookData[i].validationData
+                    preValidationHookData[i].index,
+                    preValidationHookData[i].validationData
                 )
             );
         }
@@ -284,11 +390,15 @@ abstract contract AccountTestBase is OptimizedTest {
     }
 
     // helper function to pack validation data with an index, according to the sparse calldata segment spec.
-    function _packValidationResWithIndex(uint8 index, bytes memory validationData)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(uint32(validationData.length + 1), index, validationData);
+    function _packValidationResWithIndex(
+        uint8 index,
+        bytes memory validationData
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                uint32(validationData.length + 1),
+                index,
+                validationData
+            );
     }
 }
