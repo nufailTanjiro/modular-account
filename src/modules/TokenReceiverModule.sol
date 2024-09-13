@@ -4,14 +4,8 @@ pragma solidity ^0.8.26;
 import {IERC1155Receiver} from "@openzeppelin/contracts/interfaces/IERC1155Receiver.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-import {
-    ExecutionManifest,
-    ManifestExecutionFunction
-} from "@erc-6900/reference-implementation/interfaces/IExecutionModule.sol";
-import {
-    ExecutionManifest,
-    IExecutionModule
-} from "@erc-6900/reference-implementation/interfaces/IExecutionModule.sol";
+import {ExecutionManifest, ManifestExecutionFunction} from "@erc-6900/reference-implementation/interfaces/IExecutionModule.sol";
+import {ExecutionManifest, IExecutionModule} from "@erc-6900/reference-implementation/interfaces/IExecutionModule.sol";
 import {IModule} from "@erc-6900/reference-implementation/interfaces/IModule.sol";
 
 import {BaseModule} from "./BaseModule.sol";
@@ -20,30 +14,42 @@ import {BaseModule} from "./BaseModule.sol";
 /// @author ERC-6900 Authors
 /// @notice This module allows modular accounts to receive various types of tokens by implementing
 /// required token receiver interfaces.
-contract TokenReceiverModule is BaseModule, IExecutionModule, IERC721Receiver, IERC1155Receiver {
+contract TokenReceiverModule is
+    BaseModule,
+    IExecutionModule,
+    IERC721Receiver,
+    IERC1155Receiver
+{
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Execution functions    ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
-    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
@@ -60,7 +66,12 @@ contract TokenReceiverModule is BaseModule, IExecutionModule, IERC721Receiver, I
     function onUninstall(bytes calldata) external pure override {}
 
     /// @inheritdoc IExecutionModule
-    function executionManifest() external pure override returns (ExecutionManifest memory) {
+    function executionManifest()
+        external
+        pure
+        override
+        returns (ExecutionManifest memory)
+    {
         ExecutionManifest memory manifest;
 
         manifest.executionFunctions = new ManifestExecutionFunction[](3);
