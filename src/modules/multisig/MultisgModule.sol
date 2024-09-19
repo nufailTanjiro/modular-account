@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+/* // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -127,4 +127,12 @@ contract MultisigModule is IExecutionModule, BaseModule, IERC1271 {
             newThreshold
         );
     }
+
+    /// @inheritdoc BasePlugin
+    function _isInitialized(
+        address account
+    ) internal view override returns (bool) {
+        return !_owners.isEmpty(account);
+    }
 }
+ */

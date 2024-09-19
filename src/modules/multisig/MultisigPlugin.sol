@@ -19,6 +19,7 @@ pragma solidity ^0.8.22;
 
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
@@ -57,6 +58,7 @@ import {IMultisigPlugin} from "./IMultisigPlugin.sol";
 contract MultisigPlugin is BasePlugin, IMultisigPlugin, IERC1271 {
     using AssociatedLinkedListSetLib for AssociatedLinkedListSet;
     using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
     using SafeCast for uint256;
 
     string internal constant _NAME = "Multisig Plugin";
@@ -309,13 +311,11 @@ contract MultisigPlugin is BasePlugin, IMultisigPlugin, IERC1271 {
             associatedFunction: ownerUserOpValidationFunction
         });
         manifest.userOpValidationFunctions[3] = ManifestAssociatedFunction({
-            executionSelector: UpgradeableModularAccount.installPlugin.selector,
+            executionSelector: ModularAccount.installPlugin.selector,
             associatedFunction: ownerUserOpValidationFunction
         });
         manifest.userOpValidationFunctions[4] = ManifestAssociatedFunction({
-            executionSelector: UpgradeableModularAccount
-                .uninstallPlugin
-                .selector,
+            executionSelector: ModularAccount.uninstallPlugin.selector,
             associatedFunction: ownerUserOpValidationFunction
         });
         manifest.userOpValidationFunctions[5] = ManifestAssociatedFunction({
@@ -358,13 +358,11 @@ contract MultisigPlugin is BasePlugin, IMultisigPlugin, IERC1271 {
             associatedFunction: alwaysRevertFunction
         });
         manifest.runtimeValidationFunctions[5] = ManifestAssociatedFunction({
-            executionSelector: UpgradeableModularAccount.installPlugin.selector,
+            executionSelector: ModularAccount.installPlugin.selector,
             associatedFunction: alwaysRevertFunction
         });
         manifest.runtimeValidationFunctions[6] = ManifestAssociatedFunction({
-            executionSelector: UpgradeableModularAccount
-                .uninstallPlugin
-                .selector,
+            executionSelector: ModularAccount.uninstallPlugin.selector,
             associatedFunction: alwaysRevertFunction
         });
         manifest.runtimeValidationFunctions[7] = ManifestAssociatedFunction({
